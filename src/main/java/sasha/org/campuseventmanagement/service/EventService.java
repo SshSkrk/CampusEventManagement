@@ -1,5 +1,6 @@
 package sasha.org.campuseventmanagement.service;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -13,6 +14,7 @@ import sasha.org.campuseventmanagement.model.Person;
 import sasha.org.campuseventmanagement.repo.EventRepository;
 import sasha.org.campuseventmanagement.repo.PersonRepository;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +37,15 @@ public class EventService {
     public EventService(EventRepository eventRepository, PersonRepository personRepository) {
         this.eventRepository = eventRepository;
         this.personRepository = personRepository;
+    }
+
+    @PostConstruct
+    public void init() {
+        // Create folder if it doesn't exist
+        File uploadPath = new File(uploadDir);
+        if (!uploadPath.exists()) {
+            uploadPath.mkdirs();
+        }
     }
 
     //ADMIN

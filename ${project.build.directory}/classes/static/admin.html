@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Panel – Campus Event Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #f5faff;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .container {
+            max-width: 700px;
+            margin-top: 40px;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-top: 10px;
+        }
+        .password-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+        /* Navbar style */
+        .navbar {
+            background-color: #e3f2fd !important;
+        }
+    </style>
+</head>
+
+<body>
+<!-- Navbar -->
+<nav class="navbar navbar-light bg-light justify-content-end px-4" id="navbar">
+    <div id="navbar-links">
+        <a href="index.html" class="btn btn-outline-secondary me-2">Home</a>
+    </div>
+</nav>
+
+<div class="container">
+
+    <h1 class="mb-4">Admin Panel</h1>
+
+    <!-- Create / Update Event -->
+    <section class="section">
+        <h4>Create / Update / Delete Event</h4>
+        <form id="eventForm" class="row g-3">
+            <div class="col-md-6">
+                <input type="hidden" id="eventId" />
+                <label for="eventTitle" class="form-label">Event Title</label>
+                <input type="text" id="eventTitle" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+                <label for="eventLocation" class="form-label">Location</label>
+                <input type="text" id="eventLocation" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label for="eventDate" class="form-label">Date</label>
+                <input type="date" id="eventDate" class="form-control" />
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Save Event</button>
+            </div>
+        </form>
+        <div id="eventMessage" class="mt-2"></div>
+    </section>
+
+    <!-- List All Events with Delete -->
+    <section class="section">
+        <h4>All Events</h4>
+        <button class="btn btn-outline-secondary mb-2" onclick="loadAllEvents()">Refresh Events</button>
+        <ul id="allEventsList" class="list-group"></ul>
+    </section>
+
+    <!-- Persons by Title -->
+    <section class="section">
+        <h3>Get Persons by Event Title</h3>
+        <form id="personByTitleForm" class="input-group mb-3">
+            <input type="text" id="titleQuery" class="form-control" placeholder="Event title" required />
+            <button type="submit" class="btn btn-outline-primary">Search</button>
+        </form>
+        <ul id="personsByTitleList" class="list-group"></ul>
+    </section>
+
+    <!-- Persons by Course -->
+    <section class="section">
+        <h3>Get Persons by Course</h3>
+        <form id="personByCourseForm" class="input-group mb-3">
+            <input type="text" id="courseQuery" class="form-control" placeholder="Course name" required />
+            <button type="submit" class="btn btn-outline-primary">Search</button>
+        </form>
+        <ul id="personsByCourseList" class="list-group"></ul>
+    </section>
+
+    <!-- All Persons List with Delete -->
+    <section class="section">
+        <h3>All Registered Persons</h3>
+        <button class="btn btn-outline-secondary mb-2" onclick="loadAllPersons()">Refresh List</button>
+        <ul id="allPersonsList" class="list-group"></ul>
+    </section>
+
+</div>
+
+<!-- Toast container -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div id="toastNotification" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMessage">Success message</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Navbar setup (Home, Profile, Logout)
+    async function setupNavbar() {
+        const nav = document.getElementById("navbar-links");
+        try {
+            const res = await fetch("/api/current-user", { credentials: "include" });
+            if (!res.ok) throw new Error("Not logged in");
+            const user = await res.json();
+
+            nav.innerHTML = `
+                <a href="index.html" class="btn btn-outline-secondary me-2">Home</a>
+            `;
+
+            if (user.role !== 'ADMIN') {
+                alert("Access denied: Admins only");
+                window.location.href = "index.html";
+            }
+        } catch {
+            nav.innerHTML = `<a href="login.html" class="btn btn-outline-primary me-2">Login</a>`;
+            alert("Please login to access admin panel.");
+            window.location.href = "login.html";
+        }
+    }
+
+    async function logout() {
+        await fetch("/api/logout", { method: "POST", credentials: "include" });
+        localStorage.clear();
+        window.location.href = "index.html";
+    }
+
+    // Create or Update Event
+    document.getElementById('eventForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = document.getElementById('eventId').value;
+        const title = document.getElementById('eventTitle').value.trim();
+        const location = document.getElementById('eventLocation').value.trim();
+        const date = document.getElementById('eventDate').value;
+
+        if (!title) return alert("Title is required");
+        if (!location) return alert("Location is required");
+        if (!date) return alert("Date is required");
+
+        const eventDTO = {
+            id: id ? +id : null,
+            title,
+            location,
+            date
+        };
+
+        const messageDiv = document.getElementById('eventMessage');
+
+        try {
+            const url = id ? '/api/admin/updateEvent' : '/api/admin/createEvent';
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(eventDTO)
+            });
+
+            if (res.ok) {
+                messageDiv.textContent = `✅ Event ${id ? "updated" : "created"} successfully.`;
+                messageDiv.className = 'text-success';
+
+                // Clear form if creating a new event
+                if (!id) {
+                    document.getElementById('eventTitle').value = '';
+                    document.getElementById('eventLocation').value = '';
+                    document.getElementById('eventDate').value = '';
+                }
+
+                loadAllEvents();
+
+            } else {
+                const text = await res.text();
+                messageDiv.textContent = `❌ Failed to save event: ${text}`;
+                messageDiv.className = 'text-danger';
+            }
+        } catch (err) {
+            messageDiv.textContent = "❌ Error saving event.";
+            messageDiv.className = 'text-danger';
+            console.error(err);
+        }
+
+        // Auto-hide the message after 3 seconds
+        setTimeout(() => {
+            messageDiv.textContent = '';
+            messageDiv.className = '';
+        }, 3000);
+    });
+
+
+    // Load all events
+    async function loadAllEvents() {
+        const list = document.getElementById('allEventsList');
+        list.innerHTML = 'Loading...';
+
+        try {
+            const res = await fetch('/api/getAllEvents', { credentials: 'include' });
+            if (!res.ok) {
+                list.innerHTML = '❌ Failed to load events.';
+                return;
+            }
+
+            const events = await res.json();
+            if (events.length === 0) {
+                list.innerHTML = '<li class="list-group-item">No events found.</li>';
+                return;
+            }
+
+            list.innerHTML = events.map(ev => `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${ev.title}</strong> | ${ev.location} | ${ev.date}
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary me-2" onclick="loadEventIntoForm(${ev.id}, '${ev.title.replace(/'/g, "\\'")}', '${ev.location.replace(/'/g, "\\'")}', '${ev.date}')">
+                        ✏️ Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteEvent(${ev.id})">
+                        🗑️ Delete
+                    </button>
+                </div>
+            </li>
+        `).join('');
+        } catch (err) {
+            console.error(err);
+            list.innerHTML = '❌ Error loading events.';
+        }
+    }
+
+    function loadEventIntoForm(id, title, location, date) {
+        document.getElementById('eventId').value = id;
+        document.getElementById('eventTitle').value = title;
+        document.getElementById('eventLocation').value = location;
+        document.getElementById('eventDate').value = date;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Delete event by ID
+    async function deleteEvent(id) {
+        if (!confirm("Are you sure you want to delete this event?")) return;
+
+        const messageDiv = document.getElementById('eventMessage');
+
+        try {
+            const res = await fetch(`/api/admin/deleteEventById/${id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (res.status === 204) {
+                messageDiv.textContent = '✅ Event deleted successfully.';
+                messageDiv.className = 'text-success';
+                loadAllEvents();
+            } else if (res.status === 404) {
+                messageDiv.textContent = '❌ Event not found.';
+                messageDiv.className = 'text-danger';
+            } else {
+                const text = await res.text();
+                messageDiv.textContent = '❌ Failed to delete event: ' + text;
+                messageDiv.className = 'text-danger';
+            }
+        } catch (err) {
+            console.error(err);
+            messageDiv.textContent = '❌ Error deleting event.';
+            messageDiv.className = 'text-danger';
+        }
+
+        setTimeout(() => {
+            messageDiv.textContent = '';
+            messageDiv.className = '';
+        }, 3000);
+    }
+
+
+    // Persons by title
+    document.getElementById('personByTitleForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const title = document.getElementById('titleQuery').value.trim();
+        if (!title) return;
+
+        const list = document.getElementById('personsByTitleList');
+        list.innerHTML = 'Loading...';
+
+        try {
+            const res = await fetch(`/api/admin/getPersonListByTitle/${encodeURIComponent(title)}`, {
+                credentials: 'include'
+            });
+
+            if (!res.ok) {
+                list.innerHTML = 'Failed to fetch persons.';
+                return;
+            }
+
+            const persons = await res.json();
+            if (persons.length === 0) {
+                list.innerHTML = '<li class="list-group-item">No persons found</li>';
+                return;
+            }
+
+            list.innerHTML = persons.map(p => `
+                <li class="list-group-item">
+                    ID: ${p.id} | ${p.firstName} ${p.lastName} | ${p.email} | ${p.course} | Role: ${p.role}
+                </li>
+            `).join('');
+        } catch (err) {
+            list.innerHTML = 'Error fetching persons.';
+            console.error(err);
+        }
+    });
+
+    // Persons by course
+    document.getElementById('personByCourseForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const course = document.getElementById('courseQuery').value.trim();
+        if (!course) return;
+
+        const list = document.getElementById('personsByCourseList');
+        list.innerHTML = 'Loading...';
+
+        try {
+            const res = await fetch(`/api/admin/getPersonListByCourse/${encodeURIComponent(course)}`, {
+                credentials: 'include'
+            });
+
+            if (!res.ok) {
+                list.innerHTML = 'Failed to fetch persons.';
+                return;
+            }
+
+            const persons = await res.json();
+            if (persons.length === 0) {
+                list.innerHTML = '<li class="list-group-item">No persons found</li>';
+                return;
+            }
+
+            list.innerHTML = persons.map(p => `
+                <li class="list-group-item">
+                    ID: ${p.id} | ${p.firstName} ${p.lastName} | ${p.email} | ${p.course} | Role: ${p.role}
+                </li>
+            `).join('');
+        } catch (err) {
+            list.innerHTML = 'Error fetching persons.';
+            console.error(err);
+        }
+    });
+
+    // Load all persons and display with delete buttons
+    async function loadAllPersons() {
+        const list = document.getElementById('allPersonsList');
+        list.innerHTML = 'Loading...';
+
+        try {
+            const res = await fetch('/api/admin/getAllPersonS', {
+                credentials: 'include'
+            });
+
+            if (!res.ok) {
+                list.innerHTML = '<li class="list-group-item text-danger">Failed to load persons.</li>';
+                return;
+            }
+
+            const persons = await res.json();
+            if (persons.length === 0) {
+                list.innerHTML = '<li class="list-group-item">No persons found.</li>';
+                return;
+            }
+
+            list.innerHTML = persons.map(p => `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${p.firstName} ${p.lastName}</strong> | ID: ${p.id} | ${p.email} | Course: ${p.course} | Role: ${p.role}
+                </div>
+                <button class="btn btn-sm btn-outline-danger" onclick="deletePersonById(${p.id})">
+                    🗑️ Delete
+                </button>
+            </li>
+        `).join('');
+        } catch (err) {
+            console.error(err);
+            list.innerHTML = '<li class="list-group-item text-danger">Error loading persons.</li>';
+        }
+    }
+
+    // Delete person by ID
+    async function deletePersonById(id) {
+        if (!confirm(`Are you sure you want to delete person with ID ${id}?`)) return;
+
+        try {
+            const res = await fetch(`/api/admin/deletePerson/${id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (res.ok) {
+                showToast("✅ Person deleted successfully.", "success");
+                await loadAllPersons();
+            } else if (res.status === 404) {
+                showToast("❌ Person not found.", "danger");
+            } else {
+                const text = await res.text();
+                showToast("❌ Failed to delete person: " + text, "danger");
+            }
+        } catch (err) {
+            console.error(err);
+            showToast("❌ Error deleting person.", "danger");
+        }
+    }
+
+    // Show toast notification
+    function showToast(message, type = "success") {
+        const toastEl = document.getElementById("toastNotification");
+        const toastMsg = document.getElementById("toastMessage");
+        toastMsg.textContent = message;
+        toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+    }
+
+    // Initialize on page load
+    setupNavbar();
+    loadAllEvents(); // Auto-load all events on page load
+    loadAllPersons();
+</script>
+
+</body>
+</html>
