@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Logs</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #f5faff;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .container {
+            max-width: 700px;
+            margin-top: 40px;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-top: 10px;
+        }
+        .password-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+        /* Navbar style */
+        .navbar {
+            background-color: #e3f2fd !important;
+        }
+    </style>
+</head>
+<body>
+<!-- Navbar -->
+<nav class="navbar navbar-light bg-light justify-content-end px-4" id="navbar">
+    <div id="navbar-links">
+        <a href="index.html" class="btn btn-outline-secondary me-2">Home</a>
+    </div>
+</nav>
+
+    <h1 class="mb-4 text-danger">System Logs</h1>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+            <tr>
+                <th>Date</th>
+                <th>Message</th>
+            </tr>
+            </thead>
+            <tbody id="logTableBody">
+            <!-- Logs will appear here -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    async function fetchLogs() {
+        try {
+            const user = JSON.parse(localStorage.getItem("currentUser"));
+            if (!user || user.role !== "ADMIN") {
+                alert("Access denied. Admins only.");
+                window.location.href = "index.html";
+                return;
+            }
+
+            const res = await fetch("/api/admin/getAllLogs", { credentials: "include" });
+            if (!res.ok) throw new Error("Failed to fetch logs.");
+
+            const logs = await res.json();
+            const tbody = document.getElementById("logTableBody");
+
+            if (logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2" class="text-center text-muted">No logs found.</td></tr>`;
+                return;
+            }
+
+            logs.forEach(log => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                        <td>${new Date(log.date).toLocaleString()}</td>
+                        <td>${log.message}</td>
+                    `;
+                tbody.appendChild(tr);
+            });
+
+        } catch (error) {
+            alert("Error loading logs: " + error.message);
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", fetchLogs);
+</script>
+</body>
+</html>

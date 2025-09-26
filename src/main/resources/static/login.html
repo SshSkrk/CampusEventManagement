@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Login</h2>
+    <div class="card shadow p-4">
+        <form id="loginForm">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" required />
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" required />
+            </div>
+            <div id="loginError" class="text-danger mb-3" style="display:none;"></div>
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+        </form>
+        <div class="text-center mt-3">
+            <a href="register.html">Don't have an account? Register</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+        const errorDiv = document.getElementById("loginError");
+        errorDiv.style.display = "none";
+
+        try {
+            const res = await fetch("/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include", // important for session cookies
+                body: JSON.stringify({ username, password })
+            });
+
+            if (!res.ok) {
+                errorDiv.textContent = "❌ Invalid username or password.";
+                errorDiv.style.display = "block";
+                return;
+            }
+
+            // Optional: fetch current user info to save locally
+            const userRes = await fetch('/api/current-user', { credentials: 'include' });
+
+            if (userRes.ok) {
+                const user = await userRes.json();
+                localStorage.setItem("currentUser", JSON.stringify(user));
+                alert("✅ Login successful!");
+                window.location.href = "index.html";
+            } else {
+                // If fetching user info fails, still redirect or show message
+                alert("Login succeeded, but couldn't retrieve user info.");
+                window.location.href = "index.html";
+            }
+        } catch (err) {
+            console.error("Login error:", err);
+            errorDiv.textContent = "An error occurred. Please try again later.";
+            errorDiv.style.display = "block";
+        }
+    });
+</script>
+</body>
+</html>

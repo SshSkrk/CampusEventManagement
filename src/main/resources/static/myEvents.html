@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My Events</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #f5faff;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .container {
+            max-width: 700px;
+            margin-top: 40px;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-top: 10px;
+        }
+        .password-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+        /* Navbar style */
+        .navbar {
+            background-color: #e3f2fd !important;
+        }
+    </style>
+</head>
+<body>
+<!-- Navbar -->
+<nav class="navbar navbar-light bg-light justify-content-end px-4" id="navbar">
+    <div id="navbar-links">
+        <a href="index.html" class="btn btn-outline-secondary me-2">Home</a>
+    </div>
+</nav>
+<div class="container mt-5">
+    <h1>My Events</h1>
+
+    <ul id="eventList" class="list-group mb-3">
+        <!-- Events will be appended here -->
+    </ul>
+
+    <nav>
+        <ul class="pagination">
+            <li class="page-item" id="prevPage"><a class="page-link" href="#">Previous</a></li>
+            <li class="page-item" id="nextPage"><a class="page-link" href="#">Next</a></li>
+        </ul>
+    </nav>
+</div>
+
+<script>
+    const apiBase = "/api";  // adjust if needed
+    let currentPage = 0;
+    const pageSize = 5;  // number of events per page
+    let currentUserId = null;
+
+    async function getCurrentUserId() {
+        // This depends on your app's current user storage
+        // For example, from localStorage or an API call
+        const user = JSON.parse(localStorage.getItem("currentUser"));
+        if (user && user.id) return user.id;
+        alert("You must be logged in to view your events.");
+        window.location.href = "/login.html";
+    }
+
+    async function loadEvents(page = 0) {
+        if (!currentUserId) {
+            currentUserId = await getCurrentUserId();
+            if (!currentUserId) return;
+        }
+
+        try {
+            const res = await fetch(`${apiBase}/getEventsForPerson/${currentUserId}?page=${page}&size=${pageSize}`, {
+                credentials: 'include',
+            });
+            if (!res.ok) throw new Error("Failed to load events.");
+
+            const events = await res.json();
+
+            const eventList = document.getElementById("eventList");
+            eventList.innerHTML = "";
+
+            if (events.length === 0 && page === 0) {
+                eventList.innerHTML = `<li class="list-group-item">No events found.</li>`;
+            } else {
+                events.forEach(event => {
+                    const li = document.createElement("li");
+                    li.className = "list-group-item";
+                    li.innerHTML = `
+        <h5><a href="event.html?id=${event.id}" class="text-decoration-none">${event.title}</a></h5>
+        <p><strong>Location:</strong> ${event.location}</p>
+        <p><strong>Date:</strong> ${new Date(event.date).toLocaleDateString()}</p>
+    `;
+                    eventList.appendChild(li);
+                });
+
+            }
+
+            // Enable/disable pagination buttons
+            document.getElementById("prevPage").classList.toggle("disabled", page === 0);
+            // Next button disabling depends on total results, so we enable always here; or enhance with total pages info from backend
+            document.getElementById("nextPage").classList.toggle("disabled", events.length < pageSize);
+
+            currentPage = page;
+
+        } catch (err) {
+            alert("Error loading events: " + err.message);
+        }
+    }
+
+    document.getElementById("prevPage").addEventListener("click", e => {
+        e.preventDefault();
+        if (currentPage > 0) loadEvents(currentPage - 1);
+    });
+
+    document.getElementById("nextPage").addEventListener("click", e => {
+        e.preventDefault();
+        loadEvents(currentPage + 1);
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadEvents(0);
+    });
+</script>
+
+</body>
+</html>
