@@ -38,7 +38,11 @@ public class EmailController {
             }
 
             // Build verification link
-            String link = "http://localhost:8080/api/verify?userId=" + person.getId();
+            //localhost:
+            //String link = "http://localhost:8080/api/verify?userId=" + person.getId();
+
+            String link = "https://campuseventmanagement-38e1d2d976b1.herokuapp.com/api/verify?userId=" + person.getId();
+
 
             // Send email
             emailService.sendEmail(
