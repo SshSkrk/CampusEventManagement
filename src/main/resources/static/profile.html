@@ -46,6 +46,9 @@
         <label class="form-label" for="email">Email (cannot be changed)</label>
         <input type="email" class="form-control" id="email" readonly />
 
+        <!-- Verification button -->
+        <div class="mb-3 mt-2" id="verificationContainer"></div>
+
         <label class="form-label" for="role">Role (cannot be changed)</label>
         <input type="text" class="form-control" id="role" readonly />
 
@@ -57,12 +60,7 @@
 
         <label class="form-label" for="password">Password</label>
         <div class="input-group">
-            <input
-                    type="password"
-                    class="form-control"
-                    id="password"
-                    placeholder="Leave blank to keep current password"
-            />
+            <input type="password" class="form-control" id="password" placeholder="Leave blank to keep current password" />
             <button class="btn btn-outline-secondary password-toggle" type="button" id="togglePassword" tabindex="-1">
                 👁️
             </button>
@@ -91,6 +89,7 @@
 <script>
     let currentPerson = null;
 
+    // Load user profile
     async function loadProfile() {
         try {
             const res = await fetch('/api/current-user', { credentials: 'include' });
@@ -105,24 +104,16 @@
             document.getElementById('lastName').value = currentPerson.lastName || '';
             document.getElementById('password').value = '';
 
-            // Handle course dropdown
+            // Course dropdown
             const courseSelect = document.getElementById('course');
             const selectedCourse = currentPerson.course?.trim();
-
             if (selectedCourse) {
-                const matchedOption = Array.from(courseSelect.options).find(
-                    (opt) => opt.value === selectedCourse
-                );
-
-                if (matchedOption) {
-                    courseSelect.value = selectedCourse;
-                } else {
-                    const unknownOption = new Option(selectedCourse + ' (Unknown)', selectedCourse);
-                    unknownOption.selected = true;
-                    unknownOption.disabled = true;
-                    courseSelect.add(unknownOption, courseSelect.firstChild);
-                }
+                const matchedOption = Array.from(courseSelect.options).find(opt => opt.value === selectedCourse);
+                if (matchedOption) courseSelect.value = selectedCourse;
             }
+
+            // Update verification button
+            updateVerificationButton();
 
         } catch (err) {
             console.error(err);
@@ -130,6 +121,7 @@
         }
     }
 
+    // Update profile
     async function updateProfile(personDTO) {
         const messageDiv = document.getElementById('updateMessage');
         messageDiv.textContent = '';
@@ -162,18 +154,75 @@
         }
     }
 
+    // Verification button logic
+    function updateVerificationButton() {
+        const container = document.getElementById('verificationContainer');
+
+        if (currentPerson.verified) {
+            container.innerHTML = '<button type="button" class="btn btn-success w-100" disabled>✅ Email Verified</button>';
+        } else {
+            container.innerHTML = `
+            <button type="button" class="btn btn-warning w-100" id="sendVerificationBtn">
+                📧 Send Verification Email
+            </button>
+            <div id="verificationMessage" class="mt-2"></div>
+        `;
+
+            document.getElementById('sendVerificationBtn').addEventListener('click', async () => {
+                const messageDiv = document.getElementById('verificationMessage');
+                messageDiv.textContent = '';
+                messageDiv.className = '';
+
+                try {
+                    const res = await fetch(`/api/sendEmail?userId=${currentPerson.id}`, {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+
+                    if (res.ok) {
+                        messageDiv.textContent = '✅ Verification email sent! Please check your inbox.';
+                        messageDiv.className = 'text-success';
+
+                        // Poll server every 2 seconds to check if user is verified
+                        const intervalId = setInterval(async () => {
+                            const checkRes = await fetch('/api/current-user', { credentials: 'include' });
+                            if (checkRes.ok) {
+                                const updatedUser = await checkRes.json();
+                                if (updatedUser.verified) {
+                                    currentPerson.verified = true;
+                                    updateVerificationButton(); // redraw button
+                                    clearInterval(intervalId);
+                                    messageDiv.textContent = '✅ Email verified!';
+                                    messageDiv.className = 'text-success';
+                                }
+                            }
+                        }, 2000);
+
+                    } else {
+                        const text = await res.text();
+                        messageDiv.textContent = '❌ Failed to send email: ' + text;
+                        messageDiv.className = 'text-danger';
+                    }
+                } catch (err) {
+                    console.error(err);
+                    messageDiv.textContent = '❌ Error sending verification email.';
+                    messageDiv.className = 'text-danger';
+                }
+            });
+        }
+    }
+
+
+    // Event listeners
     document.getElementById('profileForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-
-        if (!currentPerson) {
-            alert('User data not loaded yet.');
-            return;
-        }
+        if (!currentPerson) return alert('User data not loaded yet.');
 
         const updatedPerson = {
             id: currentPerson.id,
             username: currentPerson.username,
             email: currentPerson.email,
+            verified: currentPerson.verified,
             role: currentPerson.role || 'USER',
             firstName: document.getElementById('firstName').value.trim(),
             lastName: document.getElementById('lastName').value.trim(),

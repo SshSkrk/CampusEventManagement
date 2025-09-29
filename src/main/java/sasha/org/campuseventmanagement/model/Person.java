@@ -26,6 +26,9 @@ public class Person {
     private String email;
 
     @Column(nullable = false)
+    private boolean verified = false;
+
+    @Column(nullable = false)
     private String password;
 
     @Column(nullable = false)
@@ -51,6 +54,7 @@ public class Person {
                   String course){
         this.username = username;
         this.email = email;
+        this.verified = false;
         this.password = password;
         this.role = role;
         this.firstName = firstName;
@@ -64,6 +68,7 @@ public class Person {
         this.id = id;
         this.username = username;
         this.email = email;
+        this.verified = false;
         this.password = password;
         this.role = role;
         this.firstName = firstName;
@@ -80,6 +85,7 @@ public class Person {
         }
         person.setUsername(personDTO.getUsername());
         person.setEmail(personDTO.getEmail());
+        person.setVerified(personDTO.isVerified());
         person.setPassword(personDTO.getPassword());
         person.setRole(personDTO.getRole());
         person.setFirstName(personDTO.getFirstName());
@@ -100,6 +106,7 @@ public class Person {
         personDTO.setId(this.id);
         personDTO.setUsername(this.username);
         personDTO.setEmail(this.email);
+        personDTO.setVerified(this.verified);
         personDTO.setPassword(this.password);
         personDTO.setRole(this.role);
         personDTO.setFirstName(this.firstName);

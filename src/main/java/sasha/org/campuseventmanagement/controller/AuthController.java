@@ -71,6 +71,7 @@ public class AuthController {
         response.put("id", personDTO.getId());
         response.put("username", personDTO.getUsername());
         response.put("email", personDTO.getEmail());
+        response.put("verified", personDTO.isVerified());
         response.put("role", personDTO.getRole());
         response.put("firstName", personDTO.getFirstName());
         response.put("lastName", personDTO.getLastName());

@@ -137,7 +137,7 @@
             const message = await res.text();
 
             if (res.ok) {
-                alert("✅ " + message);
+                alert("✅ Registration successful! Please check your email to verify your account.");
                 window.location.href = "login.html";
             } else {
                 errorDiv.textContent = "❌ " + message;

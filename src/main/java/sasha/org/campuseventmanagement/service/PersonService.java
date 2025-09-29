@@ -152,4 +152,23 @@ public class PersonService {
                 .map(event -> event.toEventDTO()).collect(Collectors.toList());
         return eventDTOList;
     }
+
+    public Person verifyUser(Integer userId) {
+        Person person = personRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (person.isVerified()) {
+            throw new RuntimeException("User already verified.");
+        }
+
+        person.setVerified(true);
+        personRepository.save(person);
+        return person;
+    }
+
+    public Person getPersonById(Integer userId) {
+        Person person =  personRepository.getPersonById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return person;
+    }
 }

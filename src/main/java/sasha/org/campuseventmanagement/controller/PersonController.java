@@ -171,4 +171,19 @@ public class PersonController {
             return new ArrayList<>();
         }
     }
+
+    @GetMapping("/verify")
+    public ResponseEntity<String> verifyUser(@RequestParam Integer userId) {
+        try {
+            personService.verifyUser(userId);
+            return ResponseEntity.ok("✅ Email verified successfully!");
+        } catch (RuntimeException ex) {
+            LogDTO logDTO = new LogDTO();
+            logDTO.setDate(new Date());
+            logDTO.setMessage("Exception during event verifyUser. UserId: " + userId);
+            logService.createLog(logDTO);
+            return ResponseEntity.badRequest().body("❌ " + ex.getMessage());
+        }
+    }
+
 }

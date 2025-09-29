@@ -10,6 +10,7 @@ public class PersonDTO {
     private Integer id;
     private String username;
     private String email;
+    private boolean verified;
     private String password;
     private String role;
     private String firstName;
