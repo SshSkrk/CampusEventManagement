@@ -387,8 +387,7 @@
             list.innerHTML = persons.map(p => `
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 <div>
-                    <strong><strong>${p.firstName} ${p.lastName}</strong> | ID: ${p.id} | ${p.email} | Course: ${p.course} | Role: ${p.role} | Verified: ${p.verified}
-
+                    ${p.firstName} ${p.lastName} | ID: ${p.id} | ${p.email} | Course: ${p.course} | Role: ${p.role} | Verified: ${p.verified}
                 </div>
                 <button class="btn btn-sm btn-outline-danger" onclick="deletePersonById(${p.id})">
                     🗑️ Delete
@@ -400,6 +399,7 @@
             list.innerHTML = '<li class="list-group-item text-danger">Error loading persons.</li>';
         }
     }
+
 
     // Delete person by ID
     async function deletePersonById(id) {
