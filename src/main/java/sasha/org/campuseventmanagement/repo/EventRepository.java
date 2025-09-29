@@ -22,4 +22,6 @@ public interface EventRepository extends CrudRepository<Event, Integer> {
     List<Event> findAllByDate(LocalDate date);
 
     Optional<Event> findByTitle(String title);
+
+    boolean existsByTitle(String title);
 }

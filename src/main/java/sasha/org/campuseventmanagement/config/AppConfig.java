@@ -27,44 +27,55 @@ public class AppConfig {
             final PersonService personService) {
         return strings -> {
 
-            Person person1 = new Person();
-            person1.setUsername("OS");
-            person1.setEmail("skorykoleksandra@gmail.com");
-            person1.setPassword("123456");
-            person1.setRole("ADMIN"); //USER
-            person1.setFirstName("Oleksandra");
-            person1.setLastName("Skoryk");
-            person1.setCourse("Computer Science");
-            personService.createPerson(person1.toPersonDTO());
+            // Example: create persons only if they don't exist
+            if (personService.getPersonByUsername("OS") == null) {
+                Person person1 = new Person();
+                person1.setUsername("OS");
+                person1.setEmail("skorykoleksandra@gmail.com");
+                person1.setPassword("123456");
+                person1.setRole("ADMIN");
+                person1.setFirstName("Oleksandra");
+                person1.setLastName("Skoryk");
+                person1.setCourse("Computer Science");
+                personService.createPerson(person1.toPersonDTO());
+            }
 
-            Person person2 = new Person();
-            person2.setUsername("AB");
-            person2.setEmail("bidenko@gmail.com");
-            person2.setPassword("123456");
-            person2.setRole("USER"); //ADMIN
-            person2.setFirstName("Anna");
-            person2.setLastName("Bidenko");
-            person2.setCourse("Computer Science");
-            personService.createPerson(person2.toPersonDTO());
+            if (personService.getPersonByUsername("AB") == null) {
+                Person person2 = new Person();
+                person2.setUsername("AB");
+                person2.setEmail("bidenko@gmail.com");
+                person2.setPassword("123456");
+                person2.setRole("USER");
+                person2.setFirstName("Anna");
+                person2.setLastName("Bidenko");
+                person2.setCourse("Computer Science");
+                personService.createPerson(person2.toPersonDTO());
+            }
 
-            Event event1 = new Event();
-            event1.setTitle("Event 1");
-            event1.setLocation("Kyiv");
-            event1.setDate(LocalDate.now());
-            eventService.createEvent(event1.toEventDTO());
+            // Create events only if they don't exist
+            if (!eventService.existsByTitle("Event 1")) {
+                Event event1 = new Event();
+                event1.setTitle("Event 1");
+                event1.setLocation("Kyiv");
+                event1.setDate(LocalDate.now());
+                eventService.createEvent(event1.toEventDTO());
+            }
 
-            Event event2 = new Event();
-            event2.setTitle("Event 2");
-            event2.setLocation("Brussels");
-            event2.setDate(LocalDate.now());
-            eventService.createEvent(event2.toEventDTO());
+            if (!eventService.existsByTitle("Event 2")) {
+                Event event2 = new Event();
+                event2.setTitle("Event 2");
+                event2.setLocation("Brussels");
+                event2.setDate(LocalDate.now());
+                eventService.createEvent(event2.toEventDTO());
+            }
 
-            Event event3 = new Event();
-            event3.setTitle("Event 3");
-            event3.setLocation("Gent");
-            event3.setDate(LocalDate.now());
-            eventService.createEvent(event3.toEventDTO());
-
+            if (!eventService.existsByTitle("Event 3")) {
+                Event event3 = new Event();
+                event3.setTitle("Event 3");
+                event3.setLocation("Gent");
+                event3.setDate(LocalDate.now());
+                eventService.createEvent(event3.toEventDTO());
+            }
         };
     }
 }

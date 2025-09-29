@@ -86,6 +86,10 @@ public class EventService {
         return eventDTO;
     }
 
+    public boolean existsByTitle(String title) {
+        return eventRepository.existsByTitle(title);
+    }
+
     @Transactional(readOnly = true)
     public List<EventDTO> getAllEvents() {
         List<Event> events = eventRepository.findAll();
@@ -227,6 +231,4 @@ public class EventService {
         }
         return new UrlResource(filePath.toUri());
     }
-
-
 }
