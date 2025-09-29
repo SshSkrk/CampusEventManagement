@@ -316,7 +316,8 @@
 
             list.innerHTML = persons.map(p => `
                 <li class="list-group-item">
-                    ID: ${p.id} | ${p.firstName} ${p.lastName} | ${p.email} | ${p.course} | Role: ${p.role}
+                    ID: ${p.id} | ${p.firstName} ${p.lastName} | ${p.email} | ${p.course} | Role: ${p.role} | Verified: ${p.verified}
+
                 </li>
             `).join('');
         } catch (err) {
@@ -352,7 +353,8 @@
 
             list.innerHTML = persons.map(p => `
                 <li class="list-group-item">
-                    ID: ${p.id} | ${p.firstName} ${p.lastName} | ${p.email} | ${p.course} | Role: ${p.role}
+                    ID: ${p.id} | ${p.firstName} ${p.lastName} | ${p.email} | ${p.course} | Role: ${p.role} | Verified: ${p.verified}
+
                 </li>
             `).join('');
         } catch (err) {
@@ -385,7 +387,8 @@
             list.innerHTML = persons.map(p => `
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 <div>
-                    <strong>${p.firstName} ${p.lastName}</strong> | ID: ${p.id} | ${p.email} | Course: ${p.course} | Role: ${p.role}
+                    <strong><strong>${p.firstName} ${p.lastName}</strong> | ID: ${p.id} | ${p.email} | Course: ${p.course} | Role: ${p.role} | Verified: ${p.verified}
+
                 </div>
                 <button class="btn btn-sm btn-outline-danger" onclick="deletePersonById(${p.id})">
                     🗑️ Delete
