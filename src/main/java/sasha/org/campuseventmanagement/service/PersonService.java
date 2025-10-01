@@ -171,4 +171,16 @@ public class PersonService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return person;
     }
+
+    public List<PersonDTO> findByCourseContainingIgnoreCase(String course) {
+        List<Person> personList = personRepository.findByCourseContainingIgnoreCase(course);
+        if (personList.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<PersonDTO> personDTOS = new ArrayList<>();
+        for (Person person : personList) {
+            personDTOS.add(person.toPersonDTO());
+        }
+        return personDTOS;
+    }
 }

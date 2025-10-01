@@ -43,10 +43,9 @@ public class SecConfig {
                 .authorizeHttpRequests(auth -> auth
 
 
-                        .requestMatchers("/", "/index.html", "/register.html", "/login.html","/js/**",
-                                "/event.html").permitAll()
+                        .requestMatchers("/", "/index.html", "/register.html", "/login.html","/js/**").permitAll()
                         .requestMatchers("/admin.html").hasAnyRole("ADMIN")
-                        .requestMatchers("/profile.html").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/profile.html", "/event.html").hasAnyRole("USER", "ADMIN")
 
                         .requestMatchers("/api/login", "/api/current-user").permitAll()
                         .requestMatchers("/api/logout").hasAnyRole("USER", "ADMIN")
@@ -54,12 +53,14 @@ public class SecConfig {
                         .requestMatchers("/api/").permitAll()
                         .requestMatchers("/api/getAllEvents").permitAll()
                         .requestMatchers("/api/getEventById/{id}").permitAll()
-                        .requestMatchers("/api/getEventsByLocation/{location}").permitAll()
+                        //.requestMatchers("/api/getEventsByLocation/{location}").permitAll()
+                        .requestMatchers("/api/findByLocationPart").permitAll()
+
                         .requestMatchers("/api/getEventsByDate/{date}").permitAll()
                         .requestMatchers("/api/createPerson").permitAll()
 
-                        .requestMatchers("/uploadPictures/{eventId}").permitAll()
-                        .requestMatchers("/downloadPictures/{filename:.+}").permitAll()
+                        .requestMatchers("/uploadPictures/{eventId}").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/downloadPictures/{filename:.+}").hasAnyRole("USER", "ADMIN")
 
                         .requestMatchers("/api/updatePerson").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/getEventsForPerson/{personId}").hasAnyRole("USER", "ADMIN")
@@ -68,6 +69,7 @@ public class SecConfig {
                         .requestMatchers("/api/admin/createEvent").hasAnyRole("ADMIN")
                         .requestMatchers("/api/admin/updateEvent").hasAnyRole("ADMIN")
                         .requestMatchers("/api/admin/deleteEventById/{id}").hasAnyRole("ADMIN")
+                        .requestMatchers("/api/admin/getAllCourses").hasAnyRole("ADMIN")
                         .requestMatchers("/api/admin/getPersonListByCourse/{course}").hasAnyRole("ADMIN")
                         .requestMatchers("/api/admin/getPersonListByTitle/{title}").hasAnyRole("ADMIN")
                         .requestMatchers("/api/admin/deletePerson/{id}").hasAnyRole("ADMIN")

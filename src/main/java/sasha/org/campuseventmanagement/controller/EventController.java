@@ -84,7 +84,7 @@ public class EventController {
         }
 
     }
-    //done
+
     @GetMapping("/getAllEvents")
     public List<EventDTO> getAllEvents() {
         try {
@@ -127,7 +127,7 @@ public class EventController {
         }
     }
 
-    //done
+    /*
     @GetMapping("/getEventsByLocation/{location}")
     public List<EventDTO> getEventsByLocation(@PathVariable String location) {
         try {
@@ -148,7 +148,23 @@ public class EventController {
             return new ArrayList<>();
         }
     }
-    //done
+
+     */
+
+    @GetMapping("/findByLocationPart")
+    public List<EventDTO> findByLocationContainingIgnoreCase(@RequestParam String location) {
+        List<EventDTO> eventDTOS = eventService.findByLocationContainingIgnoreCase(location);
+        if (eventDTOS.isEmpty()) {
+            LogDTO logDTO = new LogDTO();
+            logDTO.setDate(new Date());
+            logDTO.setMessage("No events found for query findByLocationPart: " + location);
+            logService.createLog(logDTO);
+            return new ArrayList<>();
+        }
+        return eventDTOS;
+    }
+
+
     @GetMapping("/getEventsByDate/{date}")
     public List<EventDTO> getEventsByDate(@PathVariable("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate  date) {
         try {
@@ -169,6 +185,7 @@ public class EventController {
             return new ArrayList<>();
         }
     }
+
 
     //ADMIN
     @GetMapping("/admin/getPersonListByTitle/{title}")
@@ -192,6 +209,7 @@ public class EventController {
             return new ArrayList<>();
         }
     }
+
 
     //ADMIN
     @DeleteMapping("/admin/deleteEventById/{id}")
@@ -284,5 +302,23 @@ public class EventController {
             logService.createLog(logDTO);
             return ResponseEntity.notFound().build();
         }
+    }
+
+    //ADMIN
+    @GetMapping("/admin/getAllCourses")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<String> getAllCourses() {
+        List<String> courses = new ArrayList<>();
+        courses.add("Computer Science");
+        courses.add("Business Administration");
+        courses.add("Psychology");
+        courses.add("Engineering");
+        courses.add("Biology");
+        courses.add("Economics");
+        courses.add("Mathematics");
+        courses.add("Political Science");
+        courses.add("Nursing");
+        courses.add("Education");
+        return courses;
     }
 }

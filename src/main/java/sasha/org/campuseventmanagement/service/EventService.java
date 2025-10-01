@@ -231,4 +231,36 @@ public class EventService {
         }
         return new UrlResource(filePath.toUri());
     }
+
+    @Transactional(readOnly = true)
+    public List<EventDTO> findByLocationContainingIgnoreCase(String location) {
+        List<Event> events = eventRepository.findByLocationContainingIgnoreCase(location);
+        if (events.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<EventDTO> eventDTO = new ArrayList<>();
+        for (Event event : events) {
+            eventDTO.add(event.toEventDTO());
+        }
+        return eventDTO;
+    }
+
+    @Transactional(readOnly = true)
+    public List<PersonDTO> findPersonSByTitleContainingIgnoreCase(String title) {
+        Optional<Event> eventOpt = eventRepository.findByTitleContainingIgnoreCase(title);
+        if (eventOpt.isPresent()) {
+            List<Person> personList = eventOpt.get().getPersonList();
+            if (personList.isEmpty()) {
+                return new ArrayList<>();
+            }
+            List<PersonDTO> personDTOS = new ArrayList<>();
+            for (Person person : personList) {
+                personDTOS.add(person.toPersonDTO());
+            }
+            return personDTOS;
+        }
+        return new ArrayList<>();
+    }
+
+
 }

@@ -58,18 +58,19 @@
     <h1 class="mb-4 text-center text-primary">Campus Event Explorer</h1>
 
     <!-- Filters -->
-    <div class="mb-4">
-        <button class="btn btn-primary me-2" onclick="getAllEvents()">Get All Events</button>
-        <input type="text" id="locationInput" class="form-control d-inline w-auto me-2" placeholder="Location">
-        <button class="btn btn-secondary me-2" onclick="getEventsByLocation()">Get Events by Location</button>
-        <input type="date" id="dateInput" class="form-control d-inline w-auto me-2" />
-        <button class="btn btn-info" onclick="getEventsByDate()">Get Events by Date</button>
+    <div class="mb-4 d-flex justify-content-center align-items-center flex-wrap gap-2">
+        <button class="btn btn-primary" onclick="getAllEvents()">Get All Events</button>
+        <input type="text" id="locationInput" class="form-control w-auto" placeholder="Start typing location">
+        <input type="date" id="dateInput" class="form-control w-auto" onchange="getEventsByDate()" />
     </div>
 
+
+
     <!-- Results Panel -->
-    <div id="results" class="border p-3 bg-white rounded shadow-sm">
+    <div id="results" class="border p-4 bg-white rounded shadow-sm mx-auto text-center" style="max-width: 700px;">
         <p class="text-muted">Results will appear here...</p>
     </div>
+
 </div>
 
 <!-- ✅ Scripts -->
@@ -83,13 +84,25 @@
         renderResults(data, "All Events");
     }
 
-    async function getEventsByLocation() {
-        const location = document.getElementById("locationInput").value;
-        if (!location.trim()) return alert("Please enter a location.");
-        const res = await fetch(`${apiBase}/getEventsByLocation/${encodeURIComponent(location)}`);
-        const data = await res.json();
-        renderResults(data, `Events in "${location}"`);
-    }
+    let typingTimer;
+    const typingDelay = 300; // ms debounce so it doesn't spam server
+    const locationInput = document.getElementById("locationInput");
+
+    locationInput.addEventListener("input", () => {
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(async () => {
+            const location = locationInput.value.trim();
+            if (location.length === 0) {
+                document.getElementById("results").innerHTML = `<p class="text-muted">Results will appear here...</p>`;
+                return;
+            }
+
+            const res = await fetch(`${apiBase}/findByLocationPart?location=${encodeURIComponent(location)}`);
+            const data = await res.json();
+            renderResults(data, `Matching "${location}"`);
+        }, typingDelay);
+    });
+
 
     async function getEventsByDate() {
         const input = document.getElementById("dateInput").value;
@@ -110,25 +123,32 @@
 
         container.innerHTML = `<h4>${title}</h4>`;
 
-        // Check login status from localStorage (set in DOMContentLoaded)
-        const user = localStorage.getItem("currentUser");
-        const loggedIn = !!user;
+        // Check login status from localStorage
+        let loggedIn = false;
+        try {
+            const user = JSON.parse(localStorage.getItem("currentUser"));
+            loggedIn = user && user.id ? true : false;
+        } catch(e) {
+            loggedIn = false;
+        }
 
         events.forEach(event => {
-            // If logged in, wrap event title in a link to event.html with event id
+            // If logged in, wrap event title in a link; else just plain text
             const eventTitleHTML = loggedIn
                 ? `<a href="event.html?id=${event.id}" class="text-decoration-none">${event.title}</a>`
-                : event.title;
+                : `<span class="text-muted">${event.title} (Login to view)</span>`;
 
             container.innerHTML += `
-            <div class="mb-3 p-2 border-bottom">
-                <h5>${eventTitleHTML}</h5>
+            <div class="mb-4 p-3 border-bottom text-center">
+                <h5 class="fw-bold">${eventTitleHTML}</h5>
                 <p><strong>Location:</strong> ${event.location}</p>
                 <p><strong>Date:</strong> ${new Date(event.date).toLocaleDateString('en-GB')}</p>
             </div>
         `;
         });
     }
+
+
 
 
     // Setup dynamic navbar & redirect when DOM is ready

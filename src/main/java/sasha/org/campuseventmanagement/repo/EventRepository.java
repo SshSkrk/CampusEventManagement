@@ -24,4 +24,9 @@ public interface EventRepository extends CrudRepository<Event, Integer> {
     Optional<Event> findByTitle(String title);
 
     boolean existsByTitle(String title);
+
+    List<Event> findByLocationContainingIgnoreCase(String title);
+
+    Optional<Event> findByTitleContainingIgnoreCase(String title);
+
 }

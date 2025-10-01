@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 import sasha.org.campuseventmanagement.dto.EventDTO;
 import sasha.org.campuseventmanagement.dto.LogDTO;
 import sasha.org.campuseventmanagement.dto.PersonDTO;
-import sasha.org.campuseventmanagement.model.Person;
 import sasha.org.campuseventmanagement.service.LogService;
 import sasha.org.campuseventmanagement.service.PersonService;
 
@@ -56,7 +55,7 @@ public class PersonController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to create user");
         }
     }
-    //done
+
     @PostMapping("/updatePerson")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<Boolean> updatePerson(@RequestBody PersonDTO personDTO) {
@@ -126,6 +125,7 @@ public class PersonController {
             return new ArrayList<>();
         }
     }
+
 
     //ADMIN
     @DeleteMapping("/admin/deletePerson/{id}")

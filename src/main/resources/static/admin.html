@@ -45,40 +45,45 @@
     <!-- Create / Update Event -->
     <section class="section">
         <h4>Create / Update / Delete Event</h4>
-        <form id="eventForm" class="row g-3">
-            <div class="col-md-6">
-                <input type="hidden" id="eventId" />
+        <form id="eventForm" class="mb-3">
+            <input type="hidden" id="eventId" />
+
+            <div class="mb-3">
                 <label for="eventTitle" class="form-label">Event Title</label>
                 <input type="text" id="eventTitle" class="form-control" required />
             </div>
-            <div class="col-md-6">
+
+            <div class="mb-3">
                 <label for="eventLocation" class="form-label">Location</label>
                 <input type="text" id="eventLocation" class="form-control" />
             </div>
-            <div class="col-md-6">
+
+            <div class="mb-3">
                 <label for="eventDate" class="form-label">Date</label>
                 <input type="date" id="eventDate" class="form-control" />
             </div>
-            <div class="col-12">
-                <button type="submit" class="btn btn-primary">Save Event</button>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary w-100">Save Event</button>
             </div>
         </form>
         <div id="eventMessage" class="mt-2"></div>
     </section>
 
+
     <!-- List All Events with Delete -->
     <section class="section">
-        <h4>All Events</h4>
         <button class="btn btn-outline-secondary mb-2" onclick="loadAllEvents()">Refresh Events</button>
         <ul id="allEventsList" class="list-group"></ul>
     </section>
 
     <!-- Persons by Title -->
     <section class="section">
-        <h3>Get Persons by Event Title</h3>
+        <h3>Get Persons by Event</h3>
         <form id="personByTitleForm" class="input-group mb-3">
-            <input type="text" id="titleQuery" class="form-control" placeholder="Event title" required />
-            <button type="submit" class="btn btn-outline-primary">Search</button>
+            <select id="titleQuery" class="form-select" required>
+                <option value="" disabled selected>Select an event</option>
+            </select>
         </form>
         <ul id="personsByTitleList" class="list-group"></ul>
     </section>
@@ -87,8 +92,9 @@
     <section class="section">
         <h3>Get Persons by Course</h3>
         <form id="personByCourseForm" class="input-group mb-3">
-            <input type="text" id="courseQuery" class="form-control" placeholder="Course name" required />
-            <button type="submit" class="btn btn-outline-primary">Search</button>
+            <select id="courseQuery" class="form-select" required>
+                <option value="" disabled selected>Select a course</option>
+            </select>
         </form>
         <ul id="personsByCourseList" class="list-group"></ul>
     </section>
@@ -114,6 +120,53 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+
+    async function loadEventDropdown() {
+        const select = document.getElementById('titleQuery');
+        select.innerHTML = '<option value="" disabled selected>Select an event</option>';
+
+        try {
+            const res = await fetch('/api/getAllEvents', { credentials: 'include' });
+            if (!res.ok) throw new Error('Failed to load events');
+
+            const events = await res.json();
+            events.forEach(ev => {
+                const option = document.createElement('option');
+                option.value = ev.title; // this will be used in search
+                option.textContent = `${ev.title} | ${ev.location} | ${new Date(ev.date).toLocaleDateString('en-GB')}`;
+                select.appendChild(option);
+            });
+        } catch (err) {
+            console.error(err);
+            select.innerHTML = '<option value="" disabled>Error loading events</option>';
+        }
+    }
+
+    async function loadCourseDropdown() {
+        const select = document.getElementById('courseQuery');
+        select.innerHTML = '<option value="" disabled selected>Select a course</option>';
+
+        try {
+            const res = await fetch('/api/admin/getAllCourses', { credentials: 'include' }); // <-- create this endpoint if not exists
+            if (!res.ok) throw new Error('Failed to load courses');
+
+            const courses = await res.json();
+            courses.forEach(course => {
+                const option = document.createElement('option');
+                option.value = course; // the value will be used in search
+                option.textContent = course;
+                select.appendChild(option);
+            });
+        } catch (err) {
+            console.error(err);
+            select.innerHTML = '<option value="" disabled>Error loading courses</option>';
+        }
+    }
+
+
+
+
+
     // Navbar setup (Home, Profile, Logout)
     async function setupNavbar() {
         const nav = document.getElementById("navbar-links");
@@ -290,18 +343,17 @@
 
 
     // Persons by title
-    document.getElementById('personByTitleForm').addEventListener('submit', async e => {
-        e.preventDefault();
-        const title = document.getElementById('titleQuery').value.trim();
+    document.getElementById('titleQuery').addEventListener('change', async () => {
+        const title = document.getElementById('titleQuery').value;
+        const list = document.getElementById('personsByTitleList');
         if (!title) return;
 
-        const list = document.getElementById('personsByTitleList');
         list.innerHTML = 'Loading...';
-
         try {
             const res = await fetch(`/api/admin/getPersonListByTitle/${encodeURIComponent(title)}`, {
                 credentials: 'include'
             });
+
 
             if (!res.ok) {
                 list.innerHTML = 'Failed to fetch persons.';
@@ -315,26 +367,26 @@
             }
 
             list.innerHTML = persons.map(p => `
-                <li class="list-group-item">
-                    ID: ${p.id} | ${p.firstName} ${p.lastName} | ${p.email} | ${p.course} | Role: ${p.role} | Verified: ${p.verified}
+            <li class="list-group-item">
+                ID: ${p.id} | ${p.firstName} ${p.lastName} | ${p.email} | ${p.course} | Role: ${p.role} | Verified: ${p.verified}
+            </li>
+        `).join('');
 
-                </li>
-            `).join('');
         } catch (err) {
-            list.innerHTML = 'Error fetching persons.';
             console.error(err);
+            list.innerHTML = 'Error fetching persons.';
         }
     });
 
+
+
     // Persons by course
-    document.getElementById('personByCourseForm').addEventListener('submit', async e => {
-        e.preventDefault();
-        const course = document.getElementById('courseQuery').value.trim();
+    document.getElementById('courseQuery').addEventListener('change', async () => {
+        const course = document.getElementById('courseQuery').value;
+        const list = document.getElementById('personsByCourseList');
         if (!course) return;
 
-        const list = document.getElementById('personsByCourseList');
         list.innerHTML = 'Loading...';
-
         try {
             const res = await fetch(`/api/admin/getPersonListByCourse/${encodeURIComponent(course)}`, {
                 credentials: 'include'
@@ -352,16 +404,17 @@
             }
 
             list.innerHTML = persons.map(p => `
-                <li class="list-group-item">
-                    ID: ${p.id} | ${p.firstName} ${p.lastName} | ${p.email} | ${p.course} | Role: ${p.role} | Verified: ${p.verified}
+            <li class="list-group-item">
+                ID: ${p.id} | ${p.firstName} ${p.lastName} | ${p.email} | ${p.course} | Role: ${p.role} | Verified: ${p.verified}
+            </li>
+        `).join('');
 
-                </li>
-            `).join('');
         } catch (err) {
-            list.innerHTML = 'Error fetching persons.';
             console.error(err);
+            list.innerHTML = 'Error fetching persons.';
         }
     });
+
 
     // Load all persons and display with delete buttons
     async function loadAllPersons() {
@@ -438,8 +491,10 @@
 
     // Initialize on page load
     setupNavbar();
-    loadAllEvents(); // Auto-load all events on page load
+    loadAllEvents();
     loadAllPersons();
+    loadEventDropdown();
+    loadCourseDropdown();
 </script>
 
 </body>
